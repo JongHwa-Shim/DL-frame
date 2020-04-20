@@ -1,0 +1,3 @@
+import model
+
+a = 1
