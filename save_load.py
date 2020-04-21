@@ -1,4 +1,4 @@
-import pickle as pk
+import pickle
 
 
 def save_dataset(dataset, dataset_path):
@@ -9,7 +9,7 @@ def load_dataset(dataset_path):
     with open(dataset_path, 'rb') as f:
         dataset = pickle.load(f) #check whether or not epickle.load() load just one piece of dataset
     return dataset
-    
+
 def save_model():
     None
 

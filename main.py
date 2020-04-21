@@ -3,7 +3,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim import Adam
 import torch
-
 from preprocessing import PreProcessing
 from make_dataset import Mydataset
 from model import Model
@@ -104,6 +103,6 @@ for times in epoch:
     ############################
 
     ############################ model save
-    
+
     ############################
 ############################################################
