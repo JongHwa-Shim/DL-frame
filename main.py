@@ -29,10 +29,10 @@ OPTIMIZER = Adam(model.parameters(), lr=LEARNING_RATE, eps=1e-08, weight_decay=0
 ###########################################
 
 
-#################################################### preprocessing, make or load and save dataset
+######################################################### preprocessing, make or load and save dataset
 if LOAD_DATA == True:
 
-    load_dataset(SAVED_DATASET_PATH)
+    dataset = load_dataset(SAVED_DATASET_PATH)
 
 else:
 
@@ -51,7 +51,7 @@ else:
     ###########################################
 
 dataloader = DataLoader(dataset, batch_size = BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS)
-####################################################
+#########################################################
 
 
 ########################################### model information
@@ -64,12 +64,17 @@ print(params[0].size())
 ###########################################
 
 
-########################################### training
+########################################################## training
 model.train()
+
 
 epoch = range(EPOCH)
 for times in epoch:
-    for data in dataloader:
+
+    train_losses = []
+    accuracy_list = []
+
+    for data in dataloader: # check what returned by dataloader is
 
         output = output.to(DEVICE)
         target = target.to(DEVICE)
@@ -81,4 +86,24 @@ for times in epoch:
         model.zero_grad()
         loss.backward()
         OPTIMIZER.step()
-###########################################
+
+        train_losses.append(loss.data)
+        if torch.max(output,1)[0] == target: #if index of max value of output equal target, treat it as correct
+            accuracy_list.append(1)
+        else:
+            accuracy_list.append(0)
+        
+    ############################ leave log  
+    train_loss = sum(train_losses)/len(train_losses)
+    accuracy = accuracy_list.count(1)/len(accuracy_list)
+
+    base = ("Epoch: {epoch:d}  Loss: {loss:.8}  Accuracy: {accuracy:.8}")
+    message = base.format(epoch=times, loss=train_loss, accuracy=accuracy)
+    
+    print(message)
+    ############################
+
+    ############################ model save
+    
+    ############################
+############################################################
