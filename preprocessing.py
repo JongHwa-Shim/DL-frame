@@ -1,25 +1,23 @@
-from __future__ import print_function, division
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
 import os
 import torch
-import pandas as pd
-from skimage import io, transform
-import numpy as np
-import matplotlib.pyplot as plt
-from torchvision import transforms, utils
+from PIL import Image
+from torchvision import transforms
 
-# 경고 메시지 무시하기
-import warnings
-warnings.filterwarnings("ignore")
+def preprocessing(source_path, target_path):
+    source_path = './sample/'
+    file_list = os.listdir(path)
 
+    ########################################### source processing
+    sources = []
+    for file_name in file_list:
+        file_path = source_path + file_name
+        source = Image.open(file_path)
+        sources.append(source)
+    ###########################################
 
+    ########################################### target processing
+    targets = []
+    ###########################################
 
-root_dir = './sample/'
-im = io.imread(root_dir+'image_2.jpg')
-
-im2 = Image.new("RGB", (256,256),(102,153,255))
-pix = im2.load()
-
-
-a=1
+    return sources, targets

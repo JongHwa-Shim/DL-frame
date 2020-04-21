@@ -1,6 +1,4 @@
-b = 2
+import torch
+import torch.nn as nn
+import torchvision as tv
 
-def asdf():
-    print('abc')
-
-b = 1 + 3
