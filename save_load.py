@@ -10,8 +10,11 @@ def load_dataset(dataset_path):
         dataset = pickle.load(f) #check whether or not epickle.load() load just one piece of dataset
     return dataset
 
-def save_model():
-    None
+def save_model(model, model_path):
+    with open(model_path, 'wb') as f:
+        pickle.dump(model, f)
 
-def load_model():
-    None
+def load_model(model_path):
+    with open(model_path):
+        model = pickle.load(f)
+    return model
