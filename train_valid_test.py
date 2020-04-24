@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torch.optim import Adam
 
-def train(dataloader, model, DEVICE):
+def train(dataloader, model, CRITERION, OPTIMIZER, DEVICE):
     train_losses = []
     train_accuracy_list = []
 
@@ -26,7 +26,7 @@ def train(dataloader, model, DEVICE):
     
     return train_losses, train_accuracy_list
 
-def valid(valid_dataloader, model):
+def valid(valid_dataloader, model, CRITERION, OPTIMIZER, DEVICE):
     valid_losses = []
     valid_accuracy_list = []
 

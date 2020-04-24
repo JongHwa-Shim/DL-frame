@@ -115,11 +115,11 @@ else:
 for times in epoch:
 
     # training
-    train_losses, train_accuracy_list = train(dataloader, model, DEVICE)
+    train_losses, train_accuracy_list = train(dataloader, model, CRITERION, OPTIMIZER, DEVICE)
 
     # evaluate
     if SPLIT_DATASET:
-        valid_losses, valid_accuracy_list = valid(valid_dataloader, model, DEVICE)
+        valid_losses, valid_accuracy_list = valid(valid_dataloader, model, CRITERION, OPTIMIZER, DEVICE)
 
     # leave log
     train_message, train_loss, train_accuracy = leave_log(train_losses, train_accuracy_list, epoch)
