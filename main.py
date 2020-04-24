@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from torch.optim import Adam
 
 from preprocessing import PreProcessing
-from make_dataset import Mydataset
+from make_dataset import Mydataset, trans
 from model import Model
 from save_load import save_dataset, load_dataset, save_model, load_model
 from train_valid_test import train, valid
@@ -15,7 +15,7 @@ from message import leave_log
 DEVICE = torch.device("cuda:0")
 
 LOAD_DATA = False
-SAVE_DATA = True
+SAVE_DATA = False
 DATASET_PATH = ""
 VALID_DATASET_PATH = ""
 LOAD_MODEL = False
@@ -30,18 +30,18 @@ if TEST_MODE: # this is kind of trick to realize test mode, condition of test mo
     LOAD_MODEL = True
 
 
-BATCH_SIZE = None
+BATCH_SIZE = 64
 SHUFFLE = True
-NUM_WORKERS = 4 # multithreading
+NUM_WORKERS = 0 # multithreading
 
 if LOAD_MODEL:
     model = load_model()
 else:
-    model = Model().to(DEVICE
+    model = Model().to(DEVICE)
 
 EPOCH = 100
 LEARNING_RATE = 0.0002
-CRITERION = nn.MSELoss()
+CRITERION = nn.NLLLoss()
 OPTIMIZER = Adam(model.parameters(), lr=LEARNING_RATE, eps=1e-08, weight_decay=0)
 #############################################################################################################################
 
@@ -56,13 +56,16 @@ if LOAD_DATA == True:
 else:
 
     # preprocessing
-    source_path = None
+    source_path = r'./data/mnist-in-csv/mnist_test.csv'
     target_path = None
-    sources, targets = PreProcessing(source_path, target_path) 
+    sources, targets = PreProcessing(source_path, target_path,mode='csv') 
 
     # make dataset
     ##############################################################################
-    transform = transforms.Compose([transforms.ToTensor()])
+
+    #transform = transforms.Compose([transforms.ToTensor()])
+    transform = trans()
+
     if SPLIT_DATASET:
         pivot = int(len(sources) * SPLIT_RATIO)
         train_sources = sources[:pivot]
@@ -71,8 +74,8 @@ else:
         valid_sources = sources[pivot:]
         valid_targets = targets[pivot:]
 
-        valid_dataset = Mydataset(valid_sources,valid_targets,valid_transform)      
-        dataset = Mydataset(tarin_sources,train_targets,transform)
+        valid_dataset = Mydataset(valid_sources,valid_targets,transform)      
+        dataset = Mydataset(train_sources,train_targets,transform)
     
     else:
         dataset = MYdataset(sources,targets,transform)
@@ -112,11 +115,11 @@ else:
 for times in epoch:
 
     # training
-    train_losses, train_accuracy_list = train(datalaoder, model)
+    train_losses, train_accuracy_list = train(dataloader, model, DEVICE)
 
     # evaluate
     if SPLIT_DATASET:
-        valid_losses, valid_accuracy_list = valid(valid_dataloader, model)
+        valid_losses, valid_accuracy_list = valid(valid_dataloader, model, DEVICE)
 
     # leave log
     train_message, train_loss, train_accuracy = leave_log(train_losses, train_accuracy_list, epoch)

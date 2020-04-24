@@ -3,25 +3,34 @@
 import torch
 from torch.utils.data import Dataset
 
+class trans (object):
+    def __init__(self):
+        self.sample = {}
+    
+    def transform(self, sample):
+        self.sample['source'] = torch.FloatTensor(sample['source'])
+        self.sample['target'] = torch.FloatTensor(sample['target'])
+        return self.sample
+        
 
 class Mydataset(Dataset):
-    def __init__(self, source, target, transform=None, root_dir=None):
-        self.source = source
+    def __init__(self, sources, targets, transform=None, root_dir=None):
+        self.sources = sources
         self.root_dir = root_dir
         self.transform = transform
-        self.target = target
+        self.targets = targets
 
     def __len__(self):
-        return len(self.source)
+        return len(self.sources)
     
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        sample = {'source': self.source[idx], 'target': self.target[idx]}
+        sample = {'source': self.sources[idx], 'target': self.targets[idx]}
 
         if self.transform:
-            sample = self.transform(sample)
+            sample = self.transform.transform(sample)
 
         return sample
 

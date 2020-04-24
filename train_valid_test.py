@@ -1,11 +1,7 @@
 import torch.nn as nn
 from torch.optim import Adam
 
-LEARNING_RATE = 0.0002
-CRITERION = nn.MSELoss()
-OPTIMIZER = Adam(model.parameters(), lr=LEARNING_RATE, eps=1e-08, weight_decay=0)
-
-def train(dataloader, model):
+def train(dataloader, model, DEVICE):
     train_losses = []
     train_accuracy_list = []
 
@@ -16,7 +12,7 @@ def train(dataloader, model):
         target = data['target'].to(DEVICE)
 
         output = model(input)
-        loss = CRITERION(output, target)
+        loss = CRITERION(output, target) ################### CRITERION has not defined, 이거 main에서 가져오든지 어떻게 처리해줘야 함
 
         model.zero_grad()
         loss.backward()
