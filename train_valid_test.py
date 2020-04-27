@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from torch.optim import Adam
 
@@ -12,17 +13,24 @@ def train(dataloader, model, CRITERION, OPTIMIZER, DEVICE):
         target = data['target'].to(DEVICE)
 
         output = model(input)
-        loss = CRITERION(output, target) ################### CRITERION has not defined, 이거 main에서 가져오든지 어떻게 처리해줘야 함
+
+        target = torch.squeeze(target, dim=1) # particular processing (not essential)
+        loss = CRITERION(output, target)
 
         model.zero_grad()
         loss.backward()
         OPTIMIZER.step()
 
-        train_losses.append(loss.data)
-        if torch.max(output,1)[0] == target:    #if index of max value of output equal target, treat it as correct
-            train_accuracy_list.append(1)             
-        else:
-            train_accuracy_list.append(0)
+        train_losses.append(loss.data.item())
+
+        batch_size = output.shape[0]
+        max_index = torch.max(output,1).indices
+
+        for i in range(batch_size): #if index of max value of output equal target, treat it as correct
+            if max_index[i] == target[i]:
+                train_accuracy_list.append(1)
+            else:
+                train_accuracy_list.append(0)
     
     return train_losses, train_accuracy_list
 
@@ -36,12 +44,19 @@ def valid(valid_dataloader, model, CRITERION, OPTIMIZER, DEVICE):
         target = data['target'].to(DEVICE)
 
         output = model(input)
+
+        target = torch.squeeze(target, dim=1) # particular processing (not essential)
         loss = CRITERION(output, target)
 
-        valid_losses.append(loss.data)
-        if torch.max(output,1)[0] == target:
-            valid_accuracy_list.append(1)
-        else:
-            valid_accuracy_list.append(0)
+        valid_losses.append(loss.data.item())
+
+        batch_size = output.shape[0]
+        max_index = torch.max(output,1).indices
+
+        for i in range(batch_size): #if index of max value of output equal target, treat it as correct
+            if max_index[i] == target[i]:
+                valid_accuracy_list.append(1)
+            else:
+                valid_accuracy_list.append(0)
     
     return valid_losses, valid_accuracy_list

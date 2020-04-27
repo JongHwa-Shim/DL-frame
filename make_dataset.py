@@ -1,16 +1,13 @@
-#len(dataset) 에서 호출되는 __len__ 은 데이터셋의 크기를 리턴해야합니다.
-#dataset[i] 에서 호출되는 __getitem__ 은 i번째 샘플을 찾는데 사용됩니다.
+#len(dataset) 에서 호출되는 __len__ 은 데이터셋의 크기를 리턴
+#dataset[i] 에서 호출되는 __getitem__ 은 i번째 샘플을 찾는데 사용
 import torch
 from torch.utils.data import Dataset
 
-class trans (object):
-    def __init__(self):
-        self.sample = {}
-    
-    def transform(self, sample):
-        self.sample['source'] = torch.FloatTensor(sample['source'])
-        self.sample['target'] = torch.FloatTensor(sample['target'])
-        return self.sample
+class self_transform (object):
+    def __call__(self, sample):
+        sample['source'] = torch.FloatTensor(sample['source'])
+        sample['target'] = torch.LongTensor(sample['target'])
+        return sample
         
 
 class Mydataset(Dataset):
@@ -30,7 +27,7 @@ class Mydataset(Dataset):
         sample = {'source': self.sources[idx], 'target': self.targets[idx]}
 
         if self.transform:
-            sample = self.transform.transform(sample)
+            sample = self.transform(sample)
 
         return sample
 

@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from torch.optim import Adam
 
 from preprocessing import PreProcessing
-from make_dataset import Mydataset, trans
+from make_dataset import Mydataset, self_transform
 from model import Model
 from save_load import save_dataset, load_dataset, save_model, load_model
 from train_valid_test import train, valid
@@ -16,10 +16,10 @@ DEVICE = torch.device("cuda:0")
 
 LOAD_DATA = False
 SAVE_DATA = False
+LOAD_MODEL = False
+SAVE_MODEL = False
 DATASET_PATH = ""
 VALID_DATASET_PATH = ""
-LOAD_MODEL = False
-SAVE_MODEL = True
 MODEL_PATH = ""
 
 TEST_MODE = False
@@ -63,8 +63,7 @@ else:
     # make dataset
     ##############################################################################
 
-    #transform = transforms.Compose([transforms.ToTensor()])
-    transform = trans()
+    transform = transforms.Compose([self_transform()])
 
     if SPLIT_DATASET:
         pivot = int(len(sources) * SPLIT_RATIO)
@@ -122,18 +121,18 @@ for times in epoch:
         valid_losses, valid_accuracy_list = valid(valid_dataloader, model, CRITERION, OPTIMIZER, DEVICE)
 
     # leave log
-    train_message, train_loss, train_accuracy = leave_log(train_losses, train_accuracy_list, epoch)
+    train_message, train_loss, train_accuracy = leave_log(train_losses, train_accuracy_list, times, mode='train')
     print(train_message)
 
     if SPLIT_DATASET:
-        valid_message, valid_loss, valid_accuracy = leave_log(valid_losses, valid_accuracy_list)
-        print('\n' + valid_message)
+        valid_message, valid_loss, valid_accuracy = leave_log(valid_losses, valid_accuracy_list, times, mode='valid')
+        print(valid_message + '\n')
 
     # model save
-    if MODEL_SAVE == True:
+    if SAVE_MODEL == True:
         if SPLIT_DATASET:
             if best_valid_loss > valid_loss:
-                save_model(MODEL_PATH)
+                save_model(model, MODEL_PATH)
                 best_valid_loss = valid_loss
         else:
             if best_train_loss > train_loss:

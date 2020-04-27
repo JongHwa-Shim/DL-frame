@@ -38,6 +38,8 @@ def PreProcessing(source_path, target_path, mode=None):
             file_path = target_path + target_name
             target = 3
             targets.append(target)
+    elif mode=='other':
+        None
 
     return sources, targets
 

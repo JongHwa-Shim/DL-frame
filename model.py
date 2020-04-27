@@ -10,8 +10,6 @@ class Model(nn.Module):
         self.linear2 = nn.Linear(196, 100)
         self.act2 = nn.ELU()
         self.linear3 = nn.Linear(100, 10)
-        self.act3 = nn.ELU()
-        self.linear4 = nn.Linear(10, 1)
         self.LSM = nn.LogSoftmax(dim=1)
 
 
@@ -22,8 +20,6 @@ class Model(nn.Module):
         x = self.linear2(x)
         x = self.act2(x)
         x = self.linear3(x)
-        x = self.act3(x)
-        x = self.linear4(x)
         x = self.LSM(x)
         return x
 
