@@ -13,7 +13,6 @@ class self_transform (object):
 class Mydataset(Dataset):
     def __init__(self, sources, targets, transform=None, root_dir=None):
         self.sources = sources
-        self.root_dir = root_dir
         self.transform = transform
         self.targets = targets
 
@@ -24,7 +23,7 @@ class Mydataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        sample = {'source': self.sources[idx], 'target': self.targets[idx]}
+        sample = {'real': self.sources['real'][idx], 'condition': self.sources['condition'][idx]}
 
         if self.transform:
             sample = self.transform(sample)

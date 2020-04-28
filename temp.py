@@ -1,9 +1,5 @@
 import torch
 
-def asdf(a,b):
-    return a + b
 
-
-target = torch.empty(3).random_(2)
-
-a = asdf()
+a={'b': 2, "zxc": None}
+z = 2

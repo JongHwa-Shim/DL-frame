@@ -6,7 +6,7 @@ from torch.optim import Adam
 
 from preprocessing import PreProcessing
 from make_dataset import Mydataset, self_transform
-from model import Model
+from model import *
 from save_load import save_dataset, load_dataset, save_model, load_model
 from train_valid_test import train, valid
 from message import leave_log
@@ -19,14 +19,11 @@ SAVE_DATA = False
 LOAD_MODEL = False
 SAVE_MODEL = False
 DATASET_PATH = ""
-VALID_DATASET_PATH = ""
-MODEL_PATH = ""
+G_PATH = ""
+D_PATH = ""
 
 TEST_MODE = False
-SPLIT_DATASET = True
-SPLIT_RATIO = 0.7 # 0~1
-if TEST_MODE: # this is kind of trick to realize test mode, condition of test mode is 1.no training, 2.no train_dataset.
-    SPLIT_DATASET = False
+if TEST_MODE:
     LOAD_MODEL = True
 
 
@@ -35,14 +32,24 @@ SHUFFLE = True
 NUM_WORKERS = 0 # multithreading
 
 if LOAD_MODEL:
-    model = load_model()
+    G = load_model(G_PATH)
+    D = load_model(D_PATH)
 else:
-    model = Model().to(DEVICE)
+    G = Genrator().to(DEVICE)
+    D = Discriminator().to(DEVICE)
 
 EPOCH = 100
-LEARNING_RATE = 0.0002
-CRITERION = nn.NLLLoss()
-OPTIMIZER = Adam(model.parameters(), lr=LEARNING_RATE, eps=1e-08, weight_decay=0)
+G_LEARNING_RATE = 0.0002
+D_LEARNING_RATE = 0.0001
+
+G_CRITERION = Loss_func()
+D_CRITERION = Loss_func(nn.NLLLoss())
+
+WIDTH = None
+LENGTH = None
+
+G_OPTIMIZER = Adam(G.parameters(), lr=LEARNING_RATE, eps=1e-08, weight_decay=0)
+D_OPTIMIZER = Adam(D.parameters(), lr=LEARNING_RATE, eps=1e-08, weight_decay=0)
 #############################################################################################################################
 
 # preprocessing, make or load and save dataset
@@ -50,46 +57,26 @@ OPTIMIZER = Adam(model.parameters(), lr=LEARNING_RATE, eps=1e-08, weight_decay=0
 if LOAD_DATA == True:
 
     dataset = load_dataset(DATASET_PATH)
-    if SPLIT_DATASET:
-        valid_dataset = load_dataset(VALID_DATASET_PATH)
 
 else:
 
     # preprocessing
     source_path = r'./data/mnist-in-csv/mnist_test.csv'
-    target_path = None
-    sources, targets = PreProcessing(source_path, target_path,mode='csv') 
+    sources = PreProcessing(source_path) 
 
     # make dataset
     ##############################################################################
 
     transform = transforms.Compose([self_transform()])
 
-    if SPLIT_DATASET:
-        pivot = int(len(sources) * SPLIT_RATIO)
-        train_sources = sources[:pivot]
-        train_targets = targets[:pivot]
-
-        valid_sources = sources[pivot:]
-        valid_targets = targets[pivot:]
-
-        valid_dataset = Mydataset(valid_sources,valid_targets,transform)      
-        dataset = Mydataset(train_sources,train_targets,transform)
-    
-    else:
-        dataset = MYdataset(sources,targets,transform)
+    dataset = MYdataset(sources,transform)
 
     if SAVE_DATA == True:
         save_dataset(dataset, DATASET_PATH)
-
-        if SPLIT_DATASET:
-            save_dataset(valid_dataset, VALID_DATASET_PATH)
     ###############################################################################
 
 # make dataloader
 dataloader = DataLoader(dataset, batch_size = BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS)
-if SPLIT_DATASET:
-    valid_dataloader = DataLoader(valid_dataset, batch_size = BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS)
 #######################################################################################################################
 
 
@@ -106,36 +93,54 @@ print(params[0].size())
 # training, evaluate, log and model save
 ##########################################################################################
 epoch = range(EPOCH)
-if SPLIT_DATASET:
-    best_valid_loss = float('inf')
-else: 
-    best_train_loss = float('inf')
-
 for times in epoch:
+    D_losses = []
+    G_losses = []
+    for data in dataloader:
+        ### train discriminator
+        D_input_real = D_input_processing(data['real'],data['condition'])
+        for i in range(NUM_LEARN_D):
+            D_result_real = D(D_input_real)
+            #D_loss_real = CRITERION(D_result_real,mode='real')
 
+            G_input = G_input_processing(data['condition'], width=WIDTH, length=LENGTH)
+            fake_data = G(G_input)
+
+            D_input_fake = D_input_processing(fake_data, data['condition'], width=WIDTH, length=LENGTH)
+            D_result_fake = D(D_input_fake)
+            #D_loss_fake = CRITERION(D_result_fake,mode='fake')
+
+            D_loss, D_loss_real, D_loss_fake = D_CRITERION(D_result_real, D_result_fake)
+            D_losses.append(D_loss.data)
+
+            D.zero_grad()
+            D_loss.backward()
+            D_OPTIMIZER.step()
+        
+        ### train generator
+        for i in range(NUM_LEARN_G):
+            G_input = G_input_processing(data['condition'])
+            fake_data = G(G_input)
+
+            D_result_fake = D(fake_data)
+            G_loss = G_CRITERION(D_result_fake)
+            G_losses.append(G_loss.data)
+
+            G.zero_grad()
+            G_loss.backward()
+            G_OPTIMIZER.step()
+
+    ### visualization, logging
+    print("G Loss:", G_loss, "     D Loss", D_loss, "\n")
+        
     # training
     train_losses, train_accuracy_list = train(dataloader, model, CRITERION, OPTIMIZER, DEVICE)
 
-    # evaluate
-    if SPLIT_DATASET:
-        valid_losses, valid_accuracy_list = valid(valid_dataloader, model, CRITERION, OPTIMIZER, DEVICE)
-
     # leave log
-    train_message, train_loss, train_accuracy = leave_log(train_losses, train_accuracy_list, times, mode='train')
-    print(train_message)
-
-    if SPLIT_DATASET:
-        valid_message, valid_loss, valid_accuracy = leave_log(valid_losses, valid_accuracy_list, times, mode='valid')
-        print(valid_message + '\n')
+    message = leave_log(train_losses, train_accuracy_list, times, mode='train')
+    print(message)
 
     # model save
     if SAVE_MODEL == True:
-        if SPLIT_DATASET:
-            if best_valid_loss > valid_loss:
-                save_model(model, MODEL_PATH)
-                best_valid_loss = valid_loss
-        else:
-            if best_train_loss > train_loss:
-                save_model(MODEL_PATH)
-                best_train_loss = train_loss
+        None
 ############################################################################################
