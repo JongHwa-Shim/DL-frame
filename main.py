@@ -45,8 +45,10 @@ D_LEARNING_RATE = 0.0001
 G_CRITERION = Loss_func()
 D_CRITERION = Loss_func(nn.NLLLoss())
 
-WIDTH = None
-LENGTH = None
+G_WIDTH = None
+G_LENGTH = None
+D_WIDTH = None
+D_LENGTH = None
 
 G_OPTIMIZER = Adam(G.parameters(), lr=LEARNING_RATE, eps=1e-08, weight_decay=0)
 D_OPTIMIZER = Adam(D.parameters(), lr=LEARNING_RATE, eps=1e-08, weight_decay=0)
@@ -103,10 +105,10 @@ for times in epoch:
             D_result_real = D(D_input_real)
             #D_loss_real = CRITERION(D_result_real,mode='real')
 
-            G_input = G_input_processing(data['condition'], width=WIDTH, length=LENGTH)
+            G_input = G_input_processing(data['condition'], width=G_WIDTH, length=G_LENGTH)
             fake_data = G(G_input)
 
-            D_input_fake = D_input_processing(fake_data, data['condition'], width=WIDTH, length=LENGTH)
+            D_input_fake = D_input_processing(fake_data, data['condition'], width=D_WIDTH, length=D_LENGTH)
             D_result_fake = D(D_input_fake)
             #D_loss_fake = CRITERION(D_result_fake,mode='fake')
 
@@ -130,17 +132,13 @@ for times in epoch:
             G_loss.backward()
             G_OPTIMIZER.step()
 
-    ### visualization, logging
-    print("G Loss:", G_loss, "     D Loss", D_loss, "\n")
-        
-    # training
-    train_losses, train_accuracy_list = train(dataloader, model, CRITERION, OPTIMIZER, DEVICE)
+    ### log
+    print("G Loss:", sum(G_losses)/len(G_losses), "     D Loss", sum(D_losses)/len(D_losses), "\n")
 
-    # leave log
-    message = leave_log(train_losses, train_accuracy_list, times, mode='train')
-    print(message)
+    ### visualization
 
     # model save
     if SAVE_MODEL == True:
-        None
+        save_model(G_PATH)
+        save_model(D_PATH)
 ############################################################################################
