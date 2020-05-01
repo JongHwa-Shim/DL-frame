@@ -1,5 +1,6 @@
 import torch
+from PIL import Image
+image = './sample./image_4.jpg'
+img = Image.open(image)
 
-
-a={'b': 2, "zxc": None}
-z = 2
+a = 1

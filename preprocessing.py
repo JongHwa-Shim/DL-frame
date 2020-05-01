@@ -6,17 +6,19 @@ from torchvision import transforms
 import csv
 
 
-def PreProcessing(source_path, target_path, mode=None):
+def PreProcessing(source_path, target_path=None, mode=None):
     sources = []
     targets = []
 
     if mode==None:
         print("please select mode")
+
     elif mode=="csv":
         with open(source_path) as f:
             rdr = csv.reader(f)
             next(rdr)
             for line in rdr:
+                
                 target = line[0]
                 source = line[1:]
                 target = [int(num) for num in target]
@@ -38,8 +40,17 @@ def PreProcessing(source_path, target_path, mode=None):
             file_path = target_path + target_name
             target = 3
             targets.append(target)
+
     elif mode=='other':
         None
 
     return sources, targets
+
+def G_input_processing():
+    None
+
+def D_input_processing(**kwargs):
+    #D_input = torch.cat((real_data, condition), 1)
+    return kwargs
+    None
 

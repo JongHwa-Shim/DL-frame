@@ -26,18 +26,43 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
-        None
+        self.condition_embedding = nn.Embedding(10,10)
+        self.model = nn.Sequential(
+            nn.Linear(794,512),
+            nn.LeakyReLU(0.2,inplace=True),
+            nn.Linear(512,512),
+            nn.LeakyReLU(0.2,inplace=True),
+            nn.Linear(512,512),
+            nn.LeakyReLU(0.2,inplace=True),
+            nn.Linear(512,1)
+        )
     
     def forward(self, D_input):
-        None
+        d_in = torch.cat((D_input['real'],self.condition_embedding(D_input['condition'])),1)
+        d_out = self.model(d_in)
+        return x
 
-class Loss_func(object):
-    def __init__(self,other_loss=None):
-        self.LF = other_loss
+
+class g_criterion(object):
+    def __init__(self,loss_function=None):
+        self.loss_function = loss_function
     
-    def Loss_calc(*args):
-        if self.LF is not None:
-            loss = self.LF(*args)
-            return loss
-        else:
-            None
+    def calc_loss(self, D_result_fake, real_answer):
+        #calculate with your own way
+        G_loss = self.loss_function(D_result_fake, real_answer)
+        return G_loss
+
+class d_criterion(object):
+    def __init__(self, loss_function=None):
+        self.loss_function = loss_function
+
+
+    def calc_loss(self, D_result_real, D_result_fake, real_answer, fake_answer):
+        #calculate with your own way
+        D_loss_real = self.loss_fucntion(D_result_real, real_answer)
+        D_loss_fake = self.loss_function(D_result_fake, fake_answer)
+        D_loss = D_loss_real + D_loss_fake
+        return D_loss, D_loss_real, D_loss_fake
+
+    
+        

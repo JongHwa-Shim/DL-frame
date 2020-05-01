@@ -4,12 +4,11 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim import Adam
 
-from preprocessing import PreProcessing
-from make_dataset import Mydataset, self_transform
+from preprocessing import *
+from make_dataset import *
 from model import *
-from save_load import save_dataset, load_dataset, save_model, load_model
-from train_valid_test import train, valid
-from message import leave_log
+from save_load import *
+from train_valid_test import *
 # hyperparameter
 ############################################################################################################################# 
 DEVICE = torch.device("cuda:0")
@@ -35,23 +34,23 @@ if LOAD_MODEL:
     G = load_model(G_PATH)
     D = load_model(D_PATH)
 else:
-    G = Genrator().to(DEVICE)
+    G = Generator().to(DEVICE)
     D = Discriminator().to(DEVICE)
 
 EPOCH = 100
 G_LEARNING_RATE = 0.0002
 D_LEARNING_RATE = 0.0001
 
-G_CRITERION = Loss_func()
-D_CRITERION = Loss_func(nn.NLLLoss())
+G_CRITERION = g_criterion(nn.MSELoss())
+D_CRITERION = d_criterion(nn.MSELoss())
 
 G_WIDTH = None
 G_LENGTH = None
 D_WIDTH = None
 D_LENGTH = None
 
-G_OPTIMIZER = Adam(G.parameters(), lr=LEARNING_RATE, eps=1e-08, weight_decay=0)
-D_OPTIMIZER = Adam(D.parameters(), lr=LEARNING_RATE, eps=1e-08, weight_decay=0)
+G_OPTIMIZER = Adam(G.parameters(), lr=G_LEARNING_RATE, eps=1e-08, weight_decay=0)
+D_OPTIMIZER = Adam(D.parameters(), lr=D_LEARNING_RATE, eps=1e-08, weight_decay=0)
 #############################################################################################################################
 
 # preprocessing, make or load and save dataset
@@ -64,16 +63,17 @@ else:
 
     # preprocessing
     source_path = r'./data/mnist-in-csv/mnist_test.csv'
-    sources = PreProcessing(source_path) 
+    sources, labels = PreProcessing(source_path, target_path=None, mode='csv') 
 
     # make dataset
     ##############################################################################
 
-    transform = transforms.Compose([self_transform()])
+    transform = transforms.Compose([self_transform(transforms.ToTensor(),transforms.Normalize([0.5],[0.5]))])
+    # transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5],[0.5])])
 
-    dataset = MYdataset(sources,transform)
+    dataset = Mydataset(sources, labels, transform)
 
-    if SAVE_DATA == True:
+    if SAVE_DATA:
         save_dataset(dataset, DATASET_PATH)
     ###############################################################################
 
@@ -95,24 +95,24 @@ print(params[0].size())
 # training, evaluate, log and model save
 ##########################################################################################
 epoch = range(EPOCH)
+real_answer = None
+fake_answer = None
 for times in epoch:
     D_losses = []
     G_losses = []
     for data in dataloader:
         ### train discriminator
-        D_input_real = D_input_processing(data['real'],data['condition'])
+        D_input_real = D_input_processing(real=data['real'], condition=data['condition'])
         for i in range(NUM_LEARN_D):
             D_result_real = D(D_input_real)
-            #D_loss_real = CRITERION(D_result_real,mode='real')
 
             G_input = G_input_processing(data['condition'], width=G_WIDTH, length=G_LENGTH)
             fake_data = G(G_input)
 
             D_input_fake = D_input_processing(fake_data, data['condition'], width=D_WIDTH, length=D_LENGTH)
             D_result_fake = D(D_input_fake)
-            #D_loss_fake = CRITERION(D_result_fake,mode='fake')
 
-            D_loss, D_loss_real, D_loss_fake = D_CRITERION(D_result_real, D_result_fake)
+            D_loss, D_loss_real, D_loss_fake = D_CRITERION(D_result_real, D_result_fake, real_answer, fake_answer)
             D_losses.append(D_loss.data)
 
             D.zero_grad()
@@ -124,8 +124,10 @@ for times in epoch:
             G_input = G_input_processing(data['condition'])
             fake_data = G(G_input)
 
-            D_result_fake = D(fake_data)
-            G_loss = G_CRITERION(D_result_fake)
+            D_input_fake = D_input_processing(fake_data, data['condition'], width=D_WIDTH, length=D_LENGTH)
+            D_result_fake = D(D_input_fake)
+
+            G_loss = G_CRITERION(D_result_fake, real_answer)
             G_losses.append(G_loss.data)
 
             G.zero_grad()
