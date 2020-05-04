@@ -18,9 +18,11 @@ class self_transform (object):
         real = torch.FloatTensor(real)
         real = real.view(1,1,-1)
         real = self.toPIL(real)
+
         if self.transforms:
             for transform in self.transforms:
                 real = transform(real)
+    
         real = real.view(-1)
 
         # condition processing
@@ -35,8 +37,8 @@ class self_transform (object):
 class Mydataset(Dataset):
     def __init__(self, sources, targets, transform=None, root_dir=None):
         self.sources = sources
-        self.transform = transform
         self.targets = targets
+        self.transform = transform
 
     def __len__(self):
         return len(self.sources)
@@ -45,7 +47,13 @@ class Mydataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        sample = {'real': self.sources[idx], 'condition': self.targets[idx]}
+        sample = {}
+        sample['real'] = self.sources[idx]
+
+        if self.targets == None: # if model don't use condition
+            sample['condition'] = None
+        else:
+            sample['condition'] = self.targets[idx]
 
         if self.transform:
             sample = self.transform(sample)

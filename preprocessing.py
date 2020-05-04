@@ -46,11 +46,26 @@ def PreProcessing(source_path, target_path=None, mode=None):
 
     return sources, targets
 
-def G_input_processing():
-    None
+def G_input_processing(model, condition):
+    if condition:
+        batch_size = condition.size(0)
+        z = torch.randn((batch_size,100)).cuda()
 
-def D_input_processing(**kwargs):
+        g_in = torch.cat((model.label_emb(condition), z), -1)
+
+    else:
+        None
+    
+    return g_in
+
+def D_input_processing(model, data, condition):
     #D_input = torch.cat((real_data, condition), 1)
-    return kwargs
-    None
+    if condition:
+        batch_size = condition.size(0)
+        d_in = torch.cat((model.label_emb(condition), data), -1)
+
+    else:
+        None
+    
+    return d_in
 

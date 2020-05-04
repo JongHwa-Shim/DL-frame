@@ -9,6 +9,9 @@ from make_dataset import *
 from model import *
 from save_load import *
 from train_valid_test import *
+
+from temp import square_plot
+
 # hyperparameter
 ############################################################################################################################# 
 DEVICE = torch.device("cuda:0")
@@ -17,9 +20,9 @@ LOAD_DATA = False
 SAVE_DATA = False
 LOAD_MODEL = False
 SAVE_MODEL = False
-DATASET_PATH = ""
-G_PATH = ""
-D_PATH = ""
+DATASET_PATH = "./data/mnist-in-csv/mnist_test.csv"
+G_PATH = "./model/generator.pkl"
+D_PATH = "./model/discriminator.pkl"
 
 TEST_MODE = False
 if TEST_MODE:
@@ -30,27 +33,27 @@ BATCH_SIZE = 64
 SHUFFLE = True
 NUM_WORKERS = 0 # multithreading
 
+"""
 if LOAD_MODEL:
     G = load_model(G_PATH)
     D = load_model(D_PATH)
 else:
     G = Generator().to(DEVICE)
     D = Discriminator().to(DEVICE)
-
+"""
 EPOCH = 100
 G_LEARNING_RATE = 0.0002
 D_LEARNING_RATE = 0.0001
-
-G_CRITERION = g_criterion(nn.MSELoss())
-D_CRITERION = d_criterion(nn.MSELoss())
 
 G_WIDTH = None
 G_LENGTH = None
 D_WIDTH = None
 D_LENGTH = None
 
+"""
 G_OPTIMIZER = Adam(G.parameters(), lr=G_LEARNING_RATE, eps=1e-08, weight_decay=0)
 D_OPTIMIZER = Adam(D.parameters(), lr=D_LEARNING_RATE, eps=1e-08, weight_decay=0)
+"""
 #############################################################################################################################
 
 # preprocessing, make or load and save dataset
@@ -97,20 +100,35 @@ print(params[0].size())
 epoch = range(EPOCH)
 real_answer = None
 fake_answer = None
+
+# model definition
+############################
+if LOAD_MODEL:
+    G = load_model(G_PATH)
+    D = load_model(D_PATH)
+else:
+    G = Generator().to(DEVICE)
+    D = Discriminator().to(DEVICE)
+
+G_OPTIMIZER = Adam(G.parameters(), lr=G_LEARNING_RATE, eps=1e-08, weight_decay=0)
+D_OPTIMIZER = Adam(D.parameters(), lr=D_LEARNING_RATE, eps=1e-08, weight_decay=0)
+#############################
+
 for times in epoch:
     D_losses = []
     G_losses = []
     for data in dataloader:
         ### train discriminator
-        D_input_real = D_input_processing(real=data['real'], condition=data['condition'])
-        for i in range(NUM_LEARN_D):
-            D_result_real = D(D_input_real)
+        D_input_real = [data['real'], data['condition']]
 
-            G_input = G_input_processing(data['condition'], width=G_WIDTH, length=G_LENGTH)
+        for i in range(NUM_LEARN_D):
+            D_result_real = D(*D_input_real)
+
+            G_input = data['condition']
             fake_data = G(G_input)
 
-            D_input_fake = D_input_processing(fake_data, data['condition'], width=D_WIDTH, length=D_LENGTH)
-            D_result_fake = D(D_input_fake)
+            D_input_fake = [fake_data, data['condition']]
+            D_result_fake = D(*D_input_fake)
 
             D_loss, D_loss_real, D_loss_fake = D_CRITERION(D_result_real, D_result_fake, real_answer, fake_answer)
             D_losses.append(D_loss.data)
@@ -121,11 +139,11 @@ for times in epoch:
         
         ### train generator
         for i in range(NUM_LEARN_G):
-            G_input = G_input_processing(data['condition'])
+            G_input = data['condition']
             fake_data = G(G_input)
 
-            D_input_fake = D_input_processing(fake_data, data['condition'], width=D_WIDTH, length=D_LENGTH)
-            D_result_fake = D(D_input_fake)
+            D_input_fake = [fake_data, data['condition']]
+            D_result_fake = D(*D_input_fake)
 
             G_loss = G_CRITERION(D_result_fake, real_answer)
             G_losses.append(G_loss.data)
@@ -144,3 +162,5 @@ for times in epoch:
         save_model(G_PATH)
         save_model(D_PATH)
 ############################################################################################
+
+### 테스트용 코드를 아예 따로 짜자...
