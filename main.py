@@ -8,14 +8,13 @@ from preprocessing import *
 from make_dataset import *
 from model import *
 from save_load import *
-from train_valid_test import *
 
 from temp import square_plot
 
 # hyperparameter
 ############################################################################################################################# 
 DEVICE = torch.device("cuda:0")
-
+y = torch.randn((1,2)).unfold()
 LOAD_DATA = False
 SAVE_DATA = False
 LOAD_MODEL = False
@@ -42,6 +41,8 @@ else:
     D = Discriminator().to(DEVICE)
 """
 EPOCH = 100
+NUM_LEARN_D = 1
+NUM_LEARN_G = 1
 G_LEARNING_RATE = 0.0002
 D_LEARNING_RATE = 0.0001
 
@@ -71,7 +72,7 @@ else:
     # make dataset
     ##############################################################################
 
-    transform = transforms.Compose([self_transform(transforms.ToTensor(),transforms.Normalize([0.5],[0.5]))])
+    transform = my_transform(transforms.Normalize([0.5],[0.5]))
     # transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5],[0.5])])
 
     dataset = Mydataset(sources, labels, transform)
@@ -122,13 +123,13 @@ for times in epoch:
         D_input_real = [data['real'], data['condition']]
 
         for i in range(NUM_LEARN_D):
-            D_result_real = D(*D_input_real)
+            D_result_real = D(D_input_real)
 
             G_input = data['condition']
             fake_data = G(G_input)
 
             D_input_fake = [fake_data, data['condition']]
-            D_result_fake = D(*D_input_fake)
+            D_result_fake = D(D_input_fake)
 
             D_loss, D_loss_real, D_loss_fake = D_CRITERION(D_result_real, D_result_fake, real_answer, fake_answer)
             D_losses.append(D_loss.data)
@@ -143,7 +144,7 @@ for times in epoch:
             fake_data = G(G_input)
 
             D_input_fake = [fake_data, data['condition']]
-            D_result_fake = D(*D_input_fake)
+            D_result_fake = D(D_input_fake)
 
             G_loss = G_CRITERION(D_result_fake, real_answer)
             G_losses.append(G_loss.data)

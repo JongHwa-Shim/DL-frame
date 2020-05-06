@@ -5,7 +5,7 @@ from torchvision import transforms
 from torch.utils.data import Dataset
 from PIL import Image
 
-class self_transform (object):
+class my_transform (object):
     def __init__(self, *kwargs):
         self.toPIL = transforms.ToPILImage()
         self.transforms = [transforms for transforms in kwargs]
@@ -17,7 +17,6 @@ class self_transform (object):
         # real image processing
         real = torch.FloatTensor(real)
         real = real.view(1,1,-1)
-        real = self.toPIL(real)
 
         if self.transforms:
             for transform in self.transforms:
@@ -26,7 +25,7 @@ class self_transform (object):
         real = real.view(-1)
 
         # condition processing
-        condition = torch.FloatTensor(condition)
+        condition = torch.LongTensor(condition)
         
 
         sample['real'] = real

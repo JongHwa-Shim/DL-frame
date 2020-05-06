@@ -4,11 +4,13 @@ import torchvision as tv
 from preprocessing import *
 
 def G_input_processing(model, condition):
-    if condition:
+    condition = condition.cuda()
+
+    if condition is not None:
         batch_size = condition.size(0)
         z = torch.randn((batch_size,100)).cuda()
 
-        g_in = torch.cat((model.label_emb(condition), z), -1)
+        g_in = torch.cat((model.condition_embed(condition), z), -1)
 
     else:
         None
@@ -18,9 +20,12 @@ def G_input_processing(model, condition):
 
 def D_input_processing(model, data, condition):
     #D_input = torch.cat((real_data, condition), 1)
-    if condition:
+    data = data.cuda()
+    condition = condition.cuda()
+
+    if condition is not None:
         batch_size = condition.size(0)
-        d_in = torch.cat((model.label_emb(condition), data), -1)
+        d_in = torch.cat((model.condition_embed(condition).view(64,10), data), -1)
 
     else:
         None
@@ -32,7 +37,7 @@ class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
 
-        self.label_emb = nn.Embedding(10,10)
+        self.condition_embed = nn.Embedding(10,10)
         self.model = nn.Sequential(
             nn.Linear(110,128),
             nn.BatchNorm1d(128,0.8),
@@ -46,12 +51,12 @@ class Generator(nn.Module):
             nn.Linear(512,1024),
             nn.BatchNorm1d(1024,0.8),
             nn.LeakyReLU(0.2,inplace=True),   
-            nn.Lienar(1024,794),
+            nn.Linear(1024,794),
             nn.Tanh()
         )
     
     def forward(self, G_input):
-        g_in = G_input_processing(self, G_input)
+        g_in = G_input_processing(self, G_input) # last preprocessing
         g_out = self.model(g_in)
         return g_out
 
@@ -59,7 +64,7 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
-        self.condition_embedding = nn.Embedding(10,10)
+        self.condition_embed = nn.Embedding(10,10)
         self.model = nn.Sequential(
             nn.Linear(794,512),
             nn.LeakyReLU(0.2,inplace=True),
@@ -71,7 +76,7 @@ class Discriminator(nn.Module):
         )
     
     def forward(self, D_input):
-        d_in = D_input_processing(self, D_input)
+        d_in = D_input_processing(self, *D_input) # last preprocessing
         d_out = self.model(d_in)
         return d_out
 

@@ -1,7 +1,5 @@
-asd = 3
+import torch
 
-from temp import asdf
+test = torch.arange(0.,100).reshape((2,2,5,5))
 
-asdf(1,2)
-
-f = 4
+a = 1
