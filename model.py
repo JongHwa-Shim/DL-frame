@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torchvision as tv
-from preprocessing import *
 
 def G_input_processing(model, condition):
     condition = condition.cuda()
@@ -10,7 +9,7 @@ def G_input_processing(model, condition):
         batch_size = condition.size(0)
         z = torch.randn((batch_size,100)).cuda()
 
-        g_in = torch.cat((model.condition_embed(condition), z), -1)
+        g_in = torch.cat((model.condition_embed(condition).view(batch_size,-1), z), -1)
 
     else:
         None
@@ -25,7 +24,8 @@ def D_input_processing(model, data, condition):
 
     if condition is not None:
         batch_size = condition.size(0)
-        d_in = torch.cat((model.condition_embed(condition).view(64,10), data), -1)
+        print(batch_size)
+        d_in = torch.cat((model.condition_embed(condition).view(batch_size,-1), data), -1)
 
     else:
         None
@@ -38,6 +38,7 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         self.condition_embed = nn.Embedding(10,10)
+
         self.model = nn.Sequential(
             nn.Linear(110,128),
             nn.BatchNorm1d(128,0.8),
@@ -51,7 +52,7 @@ class Generator(nn.Module):
             nn.Linear(512,1024),
             nn.BatchNorm1d(1024,0.8),
             nn.LeakyReLU(0.2,inplace=True),   
-            nn.Linear(1024,794),
+            nn.Linear(1024,784),
             nn.Tanh()
         )
     
@@ -64,7 +65,9 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
+
         self.condition_embed = nn.Embedding(10,10)
+
         self.model = nn.Sequential(
             nn.Linear(794,512),
             nn.LeakyReLU(0.2,inplace=True),

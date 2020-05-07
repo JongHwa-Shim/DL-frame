@@ -5,27 +5,50 @@ from torchvision import transforms
 from torch.utils.data import Dataset
 from PIL import Image
 
-class my_transform (object):
-    def __init__(self, *kwargs):
-        self.toPIL = transforms.ToPILImage()
-        self.transforms = [transforms for transforms in kwargs]
+class transform_processing(object):
+    def to_FloatTensor(self,data):
+        return torch.FolatTensor(data)
+    
+    def to_LongTensor(self,data):
+        return torch.LongTensor(data)
 
+    def MinMaxScale(self,data):
+        scalar=MinMaxScaler(feature_range=(0,1))
+        scalar.fit(data)
+        scaled_data=scalar.transform(data)
+        return scaled_data
+    
+    def image_pixel_scale(self,data): #scale 0~1
+        #type(data) >> list
+        data = torch.FloatTensor(data)
+        data = data.view(1,-1)
+        filter1 = transforms.ToPILImage()
+        filter2 = transforms.ToTensor()
+        data = filter1(data)
+        data = filter2(data)
+        data = data.view(-1)
+        return data
+
+class my_transform (object):
+    def __init__(self, real_process, condition_process=None):
+        self.real_process = real_process
+        self.condition_process = condition_process
+    
     def __call__(self, sample):
         real = sample['real']
         condition = sample['condition']
 
         # real image processing
-        real = torch.FloatTensor(real)
-        real = real.view(1,1,-1)
-
-        if self.transforms:
-            for transform in self.transforms:
-                real = transform(real)
-    
-        real = real.view(-1)
+        if self.real_process:
+            for process in self.real_process:
+                real = process(real)
 
         # condition processing
-        condition = torch.LongTensor(condition)
+        if self.condition_process:
+            for process in self.condition_process:
+                condition = process(condition)
+            
+
         
 
         sample['real'] = real

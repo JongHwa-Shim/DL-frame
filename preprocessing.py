@@ -1,10 +1,10 @@
-from PIL import Image
 import os
 import torch
-from PIL import Image
 from torchvision import transforms
+from PIL import Image
 import csv
-
+from torchvision import transforms
+from sklearn.preprocessing import MinMaxScaler
 
 def PreProcessing(source_path, target_path=None, mode=None):
     sources = []
@@ -45,27 +45,4 @@ def PreProcessing(source_path, target_path=None, mode=None):
         None
 
     return sources, targets
-
-def G_input_processing(model, condition):
-    if condition:
-        batch_size = condition.size(0)
-        z = torch.randn((batch_size,100)).cuda()
-
-        g_in = torch.cat((model.label_emb(condition), z), -1)
-
-    else:
-        None
-    
-    return g_in
-
-def D_input_processing(model, data, condition):
-    #D_input = torch.cat((real_data, condition), 1)
-    if condition:
-        batch_size = condition.size(0)
-        d_in = torch.cat((model.label_emb(condition), data), -1)
-
-    else:
-        None
-    
-    return d_in
 

@@ -1,5 +1,10 @@
 import torch
+def asdf(a):
+    return a+1
 
-test = torch.arange(0.,100).reshape((2,2,5,5))
+def zxcv(asdf, b):
+    return asdf(b)
 
-a = 1
+e = zxcv(asdf=asdf, 3)
+
+x = 1

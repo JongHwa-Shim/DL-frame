@@ -11,10 +11,10 @@ from save_load import *
 
 from temp import square_plot
 
-# hyperparameter
+### hyperparameter
 ############################################################################################################################# 
 DEVICE = torch.device("cuda:0")
-y = torch.randn((1,2)).unfold()
+
 LOAD_DATA = False
 SAVE_DATA = False
 LOAD_MODEL = False
@@ -57,7 +57,7 @@ D_OPTIMIZER = Adam(D.parameters(), lr=D_LEARNING_RATE, eps=1e-08, weight_decay=0
 """
 #############################################################################################################################
 
-# preprocessing, make or load and save dataset
+### preprocessing, make or load and save dataset
 ############################################################################################################################# 
 if LOAD_DATA == True:
 
@@ -65,14 +65,14 @@ if LOAD_DATA == True:
 
 else:
 
-    # preprocessing
+    ### preprocessing
     source_path = r'./data/mnist-in-csv/mnist_test.csv'
     sources, labels = PreProcessing(source_path, target_path=None, mode='csv') 
 
-    # make dataset
+    ### make dataset
     ##############################################################################
-
-    transform = my_transform(transforms.Normalize([0.5],[0.5]))
+    filter = transform_processing()
+    transform = my_transform([filter.image_pixel_scale], [filter.to_LongTensor])
     # transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5],[0.5])])
 
     dataset = Mydataset(sources, labels, transform)
@@ -81,12 +81,12 @@ else:
         save_dataset(dataset, DATASET_PATH)
     ###############################################################################
 
-# make dataloader
+### make dataloader
 dataloader = DataLoader(dataset, batch_size = BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS)
 #######################################################################################################################
 
 
-# model information
+### model information
 ###########################################
 """
 print(model)
@@ -96,14 +96,8 @@ print(params[0].size())
 """
 ###########################################
 
-# training, evaluate, log and model save
-##########################################################################################
-epoch = range(EPOCH)
-real_answer = None
-fake_answer = None
-
-# model definition
-############################
+### model definition
+#################################
 if LOAD_MODEL:
     G = load_model(G_PATH)
     D = load_model(D_PATH)
@@ -113,15 +107,25 @@ else:
 
 G_OPTIMIZER = Adam(G.parameters(), lr=G_LEARNING_RATE, eps=1e-08, weight_decay=0)
 D_OPTIMIZER = Adam(D.parameters(), lr=D_LEARNING_RATE, eps=1e-08, weight_decay=0)
-#############################
+#################################
 
+### training, evaluate, log and model save
+##########################################################################################
+epoch = range(EPOCH)
 for times in epoch:
     D_losses = []
     G_losses = []
-    for data in dataloader:
+    batch_len = len(dataloader)
+    for num, data in enumerate(dataloader):
+
+        ### fitting batch size
+        batch_size = data['condition'].size(0)
+        print("batch_size :", batch_size)
+        REAL_ANSWER = torch.FloatTensor([[1] for _ in range(batch_size)]).to(DEVICE)
+        FAKE_ANSWER = torch.FloatTensor([[0] for _ in range(batch_size)]).to(DEVICE)
+
         ### train discriminator
         D_input_real = [data['real'], data['condition']]
-
         for i in range(NUM_LEARN_D):
             D_result_real = D(D_input_real)
 
@@ -131,7 +135,11 @@ for times in epoch:
             D_input_fake = [fake_data, data['condition']]
             D_result_fake = D(D_input_fake)
 
-            D_loss, D_loss_real, D_loss_fake = D_CRITERION(D_result_real, D_result_fake, real_answer, fake_answer)
+            D_loss, D_loss_real, D_loss_fake = D_CRITERION(D_result_real, 
+                                                            D_result_fake, 
+                                                            real_answer=REAL_ANSWER,
+                                                            fake_answer=FAKE_ANSWER
+                                                            )
             D_losses.append(D_loss.data)
 
             D.zero_grad()
@@ -146,20 +154,22 @@ for times in epoch:
             D_input_fake = [fake_data, data['condition']]
             D_result_fake = D(D_input_fake)
 
-            G_loss = G_CRITERION(D_result_fake, real_answer)
+            G_loss = G_CRITERION(D_result_fake, real_answer=REAL_ANSWER)
             G_losses.append(G_loss.data)
 
             G.zero_grad()
             G_loss.backward()
             G_OPTIMIZER.step()
 
+    print("Epoch: " + str(times))
+
     ### log
-    print("G Loss:", sum(G_losses)/len(G_losses), "     D Loss", sum(D_losses)/len(D_losses), "\n")
+    print("Average G Loss:", float(sum(G_losses)/len(G_losses)), "     Average D Loss", float(sum(D_losses)/len(D_losses)), "\n")
 
     ### visualization
 
-    # model save
-    if SAVE_MODEL == True:
+    ### model save
+    if SAVE_MODEL:
         save_model(G_PATH)
         save_model(D_PATH)
 ############################################################################################
