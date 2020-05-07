@@ -24,7 +24,6 @@ def D_input_processing(model, data, condition):
 
     if condition is not None:
         batch_size = condition.size(0)
-        print(batch_size)
         d_in = torch.cat((model.condition_embed(condition).view(batch_size,-1), data), -1)
 
     else:

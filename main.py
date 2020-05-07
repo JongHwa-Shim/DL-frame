@@ -120,7 +120,6 @@ for times in epoch:
 
         ### fitting batch size
         batch_size = data['condition'].size(0)
-        print("batch_size :", batch_size)
         REAL_ANSWER = torch.FloatTensor([[1] for _ in range(batch_size)]).to(DEVICE)
         FAKE_ANSWER = torch.FloatTensor([[0] for _ in range(batch_size)]).to(DEVICE)
 
