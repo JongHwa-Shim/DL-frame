@@ -27,33 +27,21 @@ TEST_MODE = False
 if TEST_MODE:
     LOAD_MODEL = True
 
-
 BATCH_SIZE = 64
 SHUFFLE = True
 NUM_WORKERS = 0 # multithreading
 
-"""
-if LOAD_MODEL:
-    G = load_model(G_PATH)
-    D = load_model(D_PATH)
-else:
-    G = Generator().to(DEVICE)
-    D = Discriminator().to(DEVICE)
-"""
 EPOCH = 100
 NUM_LEARN_D = 1
 NUM_LEARN_G = 1
 G_LEARNING_RATE = 0.0002
 D_LEARNING_RATE = 0.0001
 
+"""
 G_WIDTH = None
 G_LENGTH = None
 D_WIDTH = None
 D_LENGTH = None
-
-"""
-G_OPTIMIZER = Adam(G.parameters(), lr=G_LEARNING_RATE, eps=1e-08, weight_decay=0)
-D_OPTIMIZER = Adam(D.parameters(), lr=D_LEARNING_RATE, eps=1e-08, weight_decay=0)
 """
 #############################################################################################################################
 
@@ -72,7 +60,9 @@ else:
     ### make dataset
     ##############################################################################
     filter = transform_processing()
-    transform = my_transform([filter.image_pixel_scale], [filter.to_LongTensor])
+    real_process = [filter.image_pixel_scale]
+    condition_process = [filter.to_LongTensor]
+    transform = my_transform(real_process=real_process, condition_process=condition_process)
     # transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5],[0.5])])
 
     dataset = Mydataset(sources, labels, transform)
