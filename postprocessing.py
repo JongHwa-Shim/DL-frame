@@ -81,6 +81,8 @@ def visualization (data, path, mode='gray'):
 
     else:
         print("Error: this function only apply gray and RGB mode")
+
+#test code
 if __name__=="__main__":
     im = Image.open('./sample/image_2.jpg')
     trans1 = transforms.ToTensor()

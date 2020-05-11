@@ -156,7 +156,7 @@ for times in epoch:
     print("Average G Loss:", float(sum(G_losses)/len(G_losses)), "     Average D Loss", float(sum(D_losses)/len(D_losses)), "\n")
 
     ### visualization
-
+    
     ### model save
     if SAVE_MODEL:
         save_model(G_PATH)
