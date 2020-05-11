@@ -33,7 +33,7 @@ def square_plot(data, path):
 im = Image.open('./sample/image_4.jpg')
 trans1 = transforms.ToTensor()
 im = trans1(im)
-im = im.reshape((1,3,512,394))
+im = im.reshape((1,3,im.shape[1],im.shape[2]))
 im = [im for _ in range(25)]
 im = torch.cat(im,0)
 x = im
@@ -49,7 +49,7 @@ def asdf (data, path, mode='gray'):
       pad = width
    #pad = int(pad/20) #padding ratio
    pad = 4
-   n = int(np.sqrt(data.size(0)))
+   n = int(np.sqrt(data.size(0))) # e.g batch = 25 >> n = 5
 
    if mode=='gray':
       # shape: (batch, height, width)
@@ -57,10 +57,13 @@ def asdf (data, path, mode='gray'):
       padding = ((0, 0), (pad, pad), (pad, pad))
       data = np.pad(data, padding, mode='constant', constant_values=1)
 
+      #generate sample image
+      ####################################
+      sample_image = [] 
+
       height = data.shape[1]
       width = data.shape[2]
 
-      sample_image = [] #generate sample image
       start = 0
       end = n
       for j in range(n):
@@ -70,7 +73,8 @@ def asdf (data, path, mode='gray'):
 
          start = start + n
          end = end + n
-            
+      ######################################
+         
       plt.imsave(path, sample_image, cmap="gray")
 
    elif mode=='RGB':
@@ -79,19 +83,33 @@ def asdf (data, path, mode='gray'):
       padding = ((0, 0), (0, 0), (pad, pad), (pad, pad))
       data = np.pad(data, padding, mode='constant', constant_values=1)
 
-      sample_image = [[],[],[]] #generate sample image (3, height, width)
+      #generate sample image (3, height, width)
+      ##################################
+      sample_image = [[],[],[]] 
+
+      height = data.shape[2]
+      width = data.shape[3]
+
       for k in range(3):
          start = 0
          end = n
          for j in range(n):
             for i in range(height):
-               row = [ element for one_image in data[start:end][k] for element in one_image[i]]
+               row = [ element for one_image in data[start:end,k] for element in one_image[i]]
                sample_image[k].append(row)
 
             start = start + n
             end = end + n
+      sample_image = np.array(sample_image) # shape(3 x H x W)
+      
+      sample_height = sample_image.shape[1]
+      sample_width = sample_image.shape[2]
 
-      plt.imsave(path, data, cmap="rgb")
+      sample_image = np.transpose(sample_image,(1,2,0))
+      #############################################
+
+      #sample_image = sample_image.reshape((2560,1206,3))
+      plt.imsave(path, sample_image) # image shape should be (H x W x 3)
 
    else:
       print("Error: this function only apply gray and RGB mode")
