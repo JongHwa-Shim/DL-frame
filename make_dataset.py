@@ -4,6 +4,7 @@ import torch
 from torchvision import transforms
 from torch.utils.data import Dataset
 from PIL import Image
+from sklearn.preprocessing import MinMaxScaler
 
 class transform_processing(object):
     def to_FloatTensor(self,data):

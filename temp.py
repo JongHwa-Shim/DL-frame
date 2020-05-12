@@ -27,9 +27,9 @@ def square_plot(data, path):
     data = data.reshape((n * data.shape[1] , n * data.shape[3]) + data.shape[4:])
 
     plt.imsave(path, data, cmap='gray')
-
-#x = torch.randn(25,28,28)
-
+"""
+x = torch.randn(25,28,28)
+square_plot(x,None)
 im = Image.open('./sample/image_4.jpg')
 trans1 = transforms.ToTensor()
 im = trans1(im)
@@ -37,7 +37,11 @@ im = im.reshape((1,3,im.shape[1],im.shape[2]))
 im = [im for _ in range(25)]
 im = torch.cat(im,0)
 x = im
-def asdf (data, path, mode='gray'):
+"""
+def asdf (data, path, mode):
+
+   data = (data - data.min()) / (data.max() - data.min())
+   
    # batch will be n^2
    num_dim = data.ndim
    height = data.size(num_dim-2)
@@ -114,5 +118,5 @@ def asdf (data, path, mode='gray'):
    else:
       print("Error: this function only apply gray and RGB mode")
 
-asdf(x,'./result/sample.jpg', mode='RGB')
+#asdf(x,'./result/sample.jpg', mode='RGB')
 #square_plot(x,'./result/sample.jpg')

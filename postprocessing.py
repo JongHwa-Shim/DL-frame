@@ -5,6 +5,7 @@ from PIL import Image
 from torchvision import transforms
 
 def visualization (data, path, mode='gray'):
+
     # batch will be n^2
     num_dim = data.ndim
     height = data.size(num_dim-2)
@@ -16,10 +17,18 @@ def visualization (data, path, mode='gray'):
         pad = width
     """
     #pad = int(pad/20) #padding ratio
-    pad = 4
+    pad = 1
     n = int(np.sqrt(data.size(0))) # e.g batch = 25 >> n = 5
 
+
     if mode=='gray':
+
+        # data normalizing for visualization *can be deprecated
+        for i in range(data.size(0)):
+            data[i] = (data[i] - data[i].min()) / (data[i].max() - data[i].min())
+        
+        data = data.cpu().data.numpy()
+
         # shape: (batch, height, width)
         #data = data.view(data.size(0), height, -1) 
         padding = ((0, 0), (pad, pad), (pad, pad))
@@ -46,8 +55,16 @@ def visualization (data, path, mode='gray'):
         plt.imsave(path, sample_image, cmap="gray")
 
     elif mode=='RGB':
+        
+        data = data.view(data.size(0), 3, height, -1)
+
+        # data normalizing for visualization *can be deprecated
+        for i in range(data.size(0)):
+            data[i] = (data[i] - data[i].min()) / (data[i].max() - data[i].min())
+        
+        data = data.cpu().data.numpy()
+
         # shape: (batch, channel=3, height, width)
-        data = data.view(data.size(0), 3, height, -1) 
         padding = ((0, 0), (0, 0), (pad, pad), (pad, pad))
         data = np.pad(data, padding, mode='constant', constant_values=1)
 
@@ -77,7 +94,8 @@ def visualization (data, path, mode='gray'):
         #############################################
 
         #sample_image = sample_image.reshape((2560,1206,3))
-        plt.imsave(path, sample_image) # image shape should be (H x W x 3)
+        plt.imsave(path, sample_image, vmin=0, vmax=1) # image shape should be (H x W x 3)
+        
 
     else:
         print("Error: this function only apply gray and RGB mode")

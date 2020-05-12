@@ -8,8 +8,8 @@ from preprocessing import *
 from make_dataset import *
 from model import *
 from save_load import *
+from postprocessing import *
 
-from temp import square_plot
 
 ### hyperparameter
 ############################################################################################################################# 
@@ -19,7 +19,7 @@ LOAD_DATA = False
 SAVE_DATA = False
 LOAD_MODEL = False
 SAVE_MODEL = False
-DATASET_PATH = "./data/mnist-in-csv/mnist_test.csv"
+DATASET_PATH = "./data/mnist-in-csv/mnist_train.csv"
 G_PATH = "./model/generator.pkl"
 D_PATH = "./model/discriminator.pkl"
 
@@ -34,8 +34,8 @@ NUM_WORKERS = 0 # multithreading
 EPOCH = 100
 NUM_LEARN_D = 1
 NUM_LEARN_G = 1
-G_LEARNING_RATE = 0.0002
-D_LEARNING_RATE = 0.0001
+G_LEARNING_RATE = 0.00007
+D_LEARNING_RATE = 0.0002
 
 """
 G_WIDTH = None
@@ -44,6 +44,7 @@ D_WIDTH = None
 D_LENGTH = None
 """
 #############################################################################################################################
+
 
 ### preprocessing, make or load and save dataset
 ############################################################################################################################# 
@@ -86,6 +87,7 @@ print(params[0].size())
 """
 ###########################################
 
+
 ### model definition
 #################################
 if LOAD_MODEL:
@@ -95,9 +97,20 @@ else:
     G = Generator().to(DEVICE)
     D = Discriminator().to(DEVICE)
 
-G_OPTIMIZER = Adam(G.parameters(), lr=G_LEARNING_RATE, eps=1e-08, weight_decay=0)
-D_OPTIMIZER = Adam(D.parameters(), lr=D_LEARNING_RATE, eps=1e-08, weight_decay=0)
+G_OPTIMIZER = Adam(G.parameters(), lr=G_LEARNING_RATE)
+D_OPTIMIZER = Adam(D.parameters(), lr=D_LEARNING_RATE)
 #################################
+
+
+# fixed vector for visualization
+##################################
+fixed_z = torch.randn((100,100)).to(DEVICE)
+
+idx = filter.to_LongTensor([[element] for element in range(10)])
+fixed_condition = [idx for _ in range(10)]
+fixed_condition = torch.cat(fixed_condition) # shape:(100,1)
+##################################
+
 
 ### training, evaluate, log and model save
 ##########################################################################################
@@ -113,15 +126,17 @@ for times in epoch:
         REAL_ANSWER = torch.FloatTensor([[1] for _ in range(batch_size)]).to(DEVICE)
         FAKE_ANSWER = torch.FloatTensor([[0] for _ in range(batch_size)]).to(DEVICE)
 
+        G.train()
+        D.train()
         ### train discriminator
-        D_input_real = [data['real'], data['condition']]
+        D_input_real = D_input_processing(D, DEVICE, data['real'], data['condition'])
         for i in range(NUM_LEARN_D):
             D_result_real = D(D_input_real)
 
-            G_input = data['condition']
+            G_input = G_input_processing(G, DEVICE, data['condition'])
             fake_data = G(G_input)
 
-            D_input_fake = [fake_data, data['condition']]
+            D_input_fake = D_input_processing(D, DEVICE, fake_data, data['condition'])
             D_result_fake = D(D_input_fake)
 
             D_loss, D_loss_real, D_loss_fake = D_CRITERION(D_result_real, 
@@ -137,10 +152,10 @@ for times in epoch:
         
         ### train generator
         for i in range(NUM_LEARN_G):
-            G_input = data['condition']
+            G_input = G_input_processing(G, DEVICE, data['condition'])
             fake_data = G(G_input)
 
-            D_input_fake = [fake_data, data['condition']]
+            D_input_fake = D_input_processing(D, DEVICE, fake_data, data['condition'])
             D_result_fake = D(D_input_fake)
 
             G_loss = G_CRITERION(D_result_fake, real_answer=REAL_ANSWER)
@@ -155,8 +170,15 @@ for times in epoch:
     ### log
     print("Average G Loss:", float(sum(G_losses)/len(G_losses)), "     Average D Loss", float(sum(D_losses)/len(D_losses)), "\n")
 
-    ### visualization
-    
+    ### visualization 
+    G.eval()
+    fixed_G_input = G_input_processing(G, DEVICE, fixed_condition, fixed_z, mode='val')
+    generate_sample = G(fixed_G_input)
+    generate_sample = generate_sample.reshape((100,28,28))
+    path = './result/epoch ' + str(times) + '.jpg'
+    visualization(generate_sample,path,mode='gray')
+    #square_plot(generate_sample.cpu().data.numpy(),path)
+
     ### model save
     if SAVE_MODEL:
         save_model(G_PATH)
