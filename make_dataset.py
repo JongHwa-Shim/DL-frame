@@ -28,6 +28,7 @@ class transform_processing(object):
         scale = range[1] - range[0]
         middle = range[0] + (scale / 2)
         data = data * scale + middle
+        
         return data
 
 
