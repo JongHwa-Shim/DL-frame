@@ -52,10 +52,10 @@ def visualization (data, path, mode='gray'):
             end = end + n
         ######################################
          
-        plt.imsave(path, sample_image, cmap="gray")
+        plt.imsave(path, sample_image, vmin=-1, vmax=1 cmap="gray")
 
     elif mode=='RGB':
-        
+
         data = data.view(data.size(0), 3, height, -1)
 
         # data normalizing for visualization *can be deprecated
@@ -94,7 +94,7 @@ def visualization (data, path, mode='gray'):
         #############################################
 
         #sample_image = sample_image.reshape((2560,1206,3))
-        plt.imsave(path, sample_image, vmin=0, vmax=1) # image shape should be (H x W x 3)
+        plt.imsave(path, sample_image, vmin=-1, vmax=1) # image shape should be (H x W x 3)
         
 
     else:

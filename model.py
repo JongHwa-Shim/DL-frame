@@ -3,7 +3,10 @@ import torch.nn as nn
 import torchvision as tv
 
 def G_input_processing(model, device, condition, latent=None, mode='train'):
-    condition = condition.to(device)
+    condition_vector = torch.zeros((condition.size(0),10))
+    for i in range(condition.size(0)):
+        condition_vector[i][condition[i].data] = 1  
+    condition_vector = condition_vector.to(device)
 
     if condition is not None:
         batch_size = condition.size(0)
@@ -12,51 +15,29 @@ def G_input_processing(model, device, condition, latent=None, mode='train'):
         if mode=='val':
             z = latent
 
-        z = model.zLinear(z)
-        G_input = model.relu(torch.cat((model.condition_embed(condition).view(batch_size,-1), z), -1))
+        G_input = torch.cat((condition_vector.view(batch_size,-1), z), -1)
 
-    else:
-        None
-    
     return G_input
-
-
-def D_input_processing(model, device, data, condition):
-    #D_input = torch.cat((real_data, condition), 1)
-    data = data.to(device)
-    condition = condition.to(device)
-
-    if condition is not None:
-        batch_size = condition.size(0)
-        D_input = torch.cat((model.condition_embed(condition).view(batch_size,-1), data), -1)
-
-    else:
-        None
-    
-    return D_input
 
 
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
 
-        self.condition_embed = nn.Embedding(10,2000)
-        self.zLinear = nn.Linear(100,200)
-        self.relu = nn.LeakyReLU(0.2,inplace=True)
         self.model = nn.Sequential(
-            nn.Linear(2200,1500),
+            nn.Linear(110,256),
             nn.LeakyReLU(0.2,inplace=True),
             nn.Dropout(0.5),
 
-            nn.Linear(1500,1000),
+            nn.Linear(256,512),
             nn.LeakyReLU(0.2,inplace=True),
             nn.Dropout(0.5),
 
-            nn.Linear(1000,800),
+            nn.Linear(512,1024),
             nn.LeakyReLU(0.2,inplace=True),
             nn.Dropout(0.5),
 
-            nn.Linear(800,784),
+            nn.Linear(1024,784),
             nn.Tanh()
         )
     
@@ -65,19 +46,42 @@ class Generator(nn.Module):
         return G_out
 
 
+def D_input_processing(model, device, data, condition):
+    #D_input = torch.cat((real_data, condition), 1)
+    data = data.to(device)
+    
+    condition_vector = torch.zeros((condition.size(0),10))
+    for i in range(condition.size(0)):
+        condition_vector[i][condition[i].data] = 1    
+    condition_vector = condition_vector.to(device)
+
+    if condition is not None:
+        batch_size = condition.size(0)
+        D_input = torch.cat((condition_vector.view(batch_size,-1), data), -1)
+
+    else:
+        None
+    
+    return D_input
+
+
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
 
-        self.condition_embed = nn.Embedding(10,200)
-
         self.model = nn.Sequential(
-            nn.Linear(984,1024),
+            nn.Linear(794,1024),
             nn.LeakyReLU(0.2,inplace=True),
+            nn.Dropout(0.5),
+
             nn.Linear(1024,512),
             nn.LeakyReLU(0.2,inplace=True),
+            nn.Dropout(0.5),
+
             nn.Linear(512,256),
             nn.LeakyReLU(0.2,inplace=True),
+            nn.Dropout(0.5),
+
             nn.Linear(256,1),
             nn.Sigmoid()
         )

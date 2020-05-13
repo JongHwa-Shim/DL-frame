@@ -8,10 +8,28 @@ from sklearn.preprocessing import MinMaxScaler
 
 class transform_processing(object):
     def to_FloatTensor(self,data):
-        return torch.FolatTensor(data)
+        return torch.FloatTensor(data)
     
     def to_LongTensor(self,data):
         return torch.LongTensor(data)
+    
+    def Scaling(self, data, range=[-1,1], data_min=0, data_max=255):
+        if data_min == None:
+            if data_max == None:
+                data_min = data.min()
+                data_max = data.max()
+            else:
+                print("please set min max value properly (data_min is None)")
+        else:
+            if data_max == None:
+                print("please set min max value properly (data_max is None)")
+        
+        data = ((data - data_min) / (data_max - data_min)) - 0.5 #scale to -0.5~0.5
+        scale = range[1] - range[0]
+        middle = range[0] + (scale / 2)
+        data = data * scale + middle
+        return data
+
 
     def MinMaxScale(self,data):
         scalar=MinMaxScaler(feature_range=(0,1))
@@ -20,7 +38,7 @@ class transform_processing(object):
         return scaled_data
     
     def image_pixel_scale(self,data): #scale 0~1
-        #type(data) >> list
+        #type(data) = list
         data = torch.FloatTensor(data)
         data = data.view(1,-1)
         filter1 = transforms.ToPILImage()
