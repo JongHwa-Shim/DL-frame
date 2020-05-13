@@ -24,9 +24,10 @@ def visualization (data, path, mode='gray'):
     if mode=='gray':
 
         # data normalizing for visualization *can be deprecated
+        """
         for i in range(data.size(0)):
             data[i] = (data[i] - data[i].min()) / (data[i].max() - data[i].min())
-        
+        """
         data = data.cpu().data.numpy()
 
         # shape: (batch, height, width)
@@ -52,16 +53,17 @@ def visualization (data, path, mode='gray'):
             end = end + n
         ######################################
          
-        plt.imsave(path, sample_image, vmin=-1, vmax=1 cmap="gray")
+        plt.imsave(path, sample_image, cmap="gray", vmin=-1, vmax=1)
 
     elif mode=='RGB':
 
         data = data.view(data.size(0), 3, height, -1)
 
         # data normalizing for visualization *can be deprecated
+        """
         for i in range(data.size(0)):
             data[i] = (data[i] - data[i].min()) / (data[i].max() - data[i].min())
-        
+        """
         data = data.cpu().data.numpy()
 
         # shape: (batch, channel=3, height, width)

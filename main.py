@@ -31,7 +31,7 @@ BATCH_SIZE = 64
 SHUFFLE = True
 NUM_WORKERS = 0 # multithreading
 
-EPOCH = 100
+EPOCH = 200
 NUM_LEARN_D = 1
 NUM_LEARN_G = 1
 G_LEARNING_RATE = 0.0002
@@ -64,7 +64,6 @@ else:
     real_process = [filter.to_FloatTensor, filter.Scaling]
     condition_process = [filter.to_LongTensor]
     transform = my_transform(real_process=real_process, condition_process=condition_process)
-    # transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5],[0.5])])
 
     dataset = Mydataset(sources, labels, transform)
 
